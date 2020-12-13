@@ -9,6 +9,8 @@ import com.unciv.models.stats.NamedStats
 import com.unciv.models.stats.Stat
 import com.unciv.models.stats.Stats
 import com.unciv.models.translations.tr
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.pow
 
 
@@ -25,7 +27,7 @@ class Building : NamedStats(), IConstruction {
         // Could have old specialist values of "gold", "science" etc - change them to the new specialist names
         val counter = Counter<String>()
         for ((entry, amount) in specialistSlots!!) {
-            val equivalentStat = Stat.values().firstOrNull { it.name.toLowerCase() == entry }
+            val equivalentStat = Stat.values().firstOrNull { it.name.toLowerCase(Locale.ENGLISH) == entry }
 
             if (equivalentStat != null)
                 counter[Specialist.specialistNameByStat(equivalentStat)] = amount
@@ -143,21 +145,22 @@ class Building : NamedStats(), IConstruction {
 
             for (unique in civInfo.getMatchingUniques("[] from every []")) {
                 if (unique.params[1] != baseBuildingName) continue
-                stats.add(unique.stats!!)
+                stats.add(unique.stats)
             }
 
             for (unique in uniqueObjects)
-                if (unique.placeholderText == "[] with []" && civInfo.hasResource(unique.params[1]) && Stats.isStats(unique.params[0]))
-                    stats.add(unique.stats!!)
+                if (unique.placeholderText == "[] with []" && civInfo.hasResource(unique.params[1])
+                        && Stats.isStats(unique.params[0]))
+                    stats.add(unique.stats)
 
             if (!isWonder)
                 for (unique in civInfo.getMatchingUniques("[] from all [] buildings")) {
                     if (isStatRelated(Stat.valueOf(unique.params[1])))
-                        stats.add(unique.stats!!)
+                        stats.add(unique.stats)
                 }
             else
                 for (unique in civInfo.getMatchingUniques("[] from every Wonder"))
-                    stats.add(unique.stats!!)
+                    stats.add(unique.stats)
 
         }
         return stats
@@ -243,6 +246,13 @@ class Building : NamedStats(), IConstruction {
         if(uniqueObjects.any { it.placeholderText=="Not displayed as an available construction unless [] is built"
                         && !construction.containsBuildingOrEquivalent(it.params[0])} )
             return "Should not be displayed"
+        
+        for (unique in uniqueObjects.filter { it.placeholderText == "Not displayed as an available construction without []"}) {
+            val filter = unique.params[0]
+            if ((filter in civInfo.gameInfo.ruleSet.tileResources && !construction.cityInfo.civInfo.hasResource(filter))
+                    || (filter in civInfo.gameInfo.ruleSet.buildings && !construction.containsBuildingOrEquivalent(filter)))
+                return "Should not be displayed"
+        }
 
         for(unique in uniqueObjects) when (unique.placeholderText) {
             "Must be on []" -> if (!cityCenter.matchesUniqueFilter(unique.params[0])) return unique.text
@@ -267,10 +277,6 @@ class Building : NamedStats(), IConstruction {
                     return unique.text
             "Must be next to river" -> // Deprecated as of 3.10.8 . Use "Must be on [River]" instead
                 if (!cityCenter.isAdjacentToRiver()) return unique.text
-            "Must not be on plains" ->  // Deprecated as of 3.10.8 . Use "Must not be on [Plains]" instead
-                if (cityCenter.baseTerrain == Constants.plains) return unique.text
-            "Must not be on hill" ->  // Deprecated as of 3.10.8 . Use "Must not be on [Hill]" instead
-                if (cityCenter.baseTerrain == Constants.hill) return unique.text
             "Can only be built in coastal cities" ->  // Deprecated as of 3.10.8 . Use "Must be next to [Coast]" instead
                 if (!cityCenter.isCoastalTile()) return unique.text
             "Must border a source of fresh water" ->  // Deprecated as of 3.10.8 . Use "Must be next to [Fresh water]" instead
@@ -367,22 +373,7 @@ class Building : NamedStats(), IConstruction {
         }
 
         for (unique in uniqueObjects)
-            UniqueTriggerActivation.triggerCivwideUnique(unique, civInfo)
-
-        // ALL these are deprecated as of 3.10.10 and are currently here to not break mods relying on them
-        if ("2 free Great Artists appear" in uniques) {
-            civInfo.addUnit("Great Artist", cityConstructions.cityInfo)
-            civInfo.addUnit("Great Artist", cityConstructions.cityInfo)
-        }
-        if ("2 free great scientists appear" in uniques) {
-            civInfo.addUnit("Great Scientist", cityConstructions.cityInfo)
-            civInfo.addUnit("Great Scientist", cityConstructions.cityInfo)
-        }
-        if ("Provides 2 free workers" in uniques) {
-            civInfo.addUnit(Constants.worker, cityConstructions.cityInfo)
-            civInfo.addUnit(Constants.worker, cityConstructions.cityInfo)
-        }
-
+            UniqueTriggerActivation.triggerCivwideUnique(unique, civInfo, cityConstructions.cityInfo)
 
         if ("Enemy land units must spend 1 extra movement point when inside your territory (obsolete upon Dynamite)" in uniques)
             civInfo.updateHasActiveGreatWall()
@@ -404,7 +395,7 @@ class Building : NamedStats(), IConstruction {
     }
 
     fun getBaseBuilding(ruleset: Ruleset): Building {
-        if(replaces==null) return this
+        if (replaces == null) return this
         else return ruleset.buildings[replaces!!]!!
     }
 }

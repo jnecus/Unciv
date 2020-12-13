@@ -37,35 +37,30 @@ class Technology {
             lineList += impimpString
         }
 
-        val improvedImprovements = ruleset.tileImprovements.values
-                .filter { it.improvingTech == name }.groupBy { it.improvingTechStats.toString() }
-        for (improvement in improvedImprovements) {
-            val impimpString = improvement.value.joinToString { it.name.tr() } +
-                    " {provide" + (if (improvement.value.size == 1) "s" else "") + "} " + improvement.key
-            lineList += impimpString.tr()
-        }
-
         val viewingCiv = UncivGame.Current.worldScreen.viewingCiv
         val enabledUnits = getEnabledUnits(viewingCiv)
-        if (enabledUnits.isNotEmpty()) {
+        if (enabledUnits.any { "Will not be displayed in Civilopedia" !in it.uniques}) {
             lineList += "{Units enabled}: "
-            for (unit in enabledUnits)
+            for (unit in enabledUnits
+                    .filter { "Will not be displayed in Civilopedia" !in it.uniques})
                 lineList += " * " + unit.name.tr() + " (" + unit.getShortDescription() + ")"
         }
 
         val enabledBuildings = getEnabledBuildings(viewingCiv)
 
         val regularBuildings = enabledBuildings.filter { !it.isWonder && !it.isNationalWonder }
-        if (regularBuildings.isNotEmpty()) {
+        if (regularBuildings.any { "Will not be displayed in Civilopedia" !in it.uniques}) {
             lineList += "{Buildings enabled}: "
-            for (building in regularBuildings)
+            for (building in regularBuildings
+                    .filter { "Will not be displayed in Civilopedia" !in it.uniques})
                 lineList += "* " + building.name.tr() + " (" + building.getShortDescription(ruleset) + ")"
         }
 
         val wonders = enabledBuildings.filter { it.isWonder || it.isNationalWonder }
-        if (wonders.isNotEmpty()) {
+        if (wonders.any { "Will not be displayed in Civilopedia" !in it.uniques }) {
             lineList += "{Wonders enabled}: "
-            for (wonder in wonders)
+            for (wonder in wonders
+                    .filter { "Will not be displayed in Civilopedia" !in it.uniques})
                 lineList += " * " + wonder.name.tr() + " (" + wonder.getShortDescription(ruleset) + ")"
         }
 

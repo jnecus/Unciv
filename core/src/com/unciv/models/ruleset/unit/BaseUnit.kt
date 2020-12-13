@@ -122,9 +122,12 @@ class BaseUnit : INamed, IConstruction {
     fun getRejectionReason(construction: CityConstructions): String {
         if (unitType.isWaterUnit() && !construction.cityInfo.getCenterTile().isCoastalTile())
             return "Can only build water units in coastal cities"
-        if (uniqueObjects.any { it.placeholderText == "Not displayed as an available construction unless [] is built"
-                            && !construction.containsBuildingOrEquivalent(it.params[0]) })
-            return "Should not be displayed"
+        for (unique in uniqueObjects.filter { it.placeholderText == "Not displayed as an available construction without []"}) {
+            val filter = unique.params[0]
+            if ((filter in construction.cityInfo.civInfo.gameInfo.ruleSet.tileResources && !construction.cityInfo.civInfo.hasResource(filter))
+                    || (filter in construction.cityInfo.civInfo.gameInfo.ruleSet.buildings && !construction.containsBuildingOrEquivalent(filter)))
+                return "Should not be displayed"
+        }
         val civRejectionReason = getRejectionReason(construction.cityInfo.civInfo)
         if (civRejectionReason != "") return civRejectionReason
         return ""
@@ -175,7 +178,7 @@ class BaseUnit : INamed, IConstruction {
 
         for (unique in construction.cityInfo.cityConstructions.builtBuildingUniqueMap.getUniques("New [] units start with [] Experience in this city")
                 + civInfo.getMatchingUniques("New [] units start with [] Experience")) {
-            if (unit.matchesCategory(unique.params[0]))
+            if (unit.matchesFilter(unique.params[0]))
                 XP += unique.params[1].toInt()
         }
         unit.promotions.XP = XP
@@ -184,7 +187,7 @@ class BaseUnit : INamed, IConstruction {
             val filter = unique.params[0]
             val promotion = unique.params[1]
 
-            if (unit.matchesCategory(filter) || (filter == "relevant" && civInfo.gameInfo.ruleSet.unitPromotions.values.any { unit.type.toString() in it.unitTypes && it.name == promotion }))
+            if (unit.matchesFilter(filter) || (filter == "relevant" && civInfo.gameInfo.ruleSet.unitPromotions.values.any { unit.type.toString() in it.unitTypes && it.name == promotion }))
                 unit.promotions.addPromotion(promotion, isFree = true)
         }
 
@@ -207,5 +210,17 @@ class BaseUnit : INamed, IConstruction {
     fun getReplacedUnit(ruleset: Ruleset): BaseUnit {
         return if (replaces == null) this
         else ruleset.units[replaces!!]!!
+    }
+
+    fun matchesFilter(filter:String):Boolean {
+        if (filter == unitType.name) return true
+        if (filter == name) return true
+        if (filter == "All") return true
+        if ((filter == "Land" || filter == "land units") && unitType.isLandUnit()) return true
+        if ((filter == "Water" || filter == "water units") && unitType.isWaterUnit()) return true
+        if ((filter == "Air" || filter == "air units") && unitType.isAirUnit()) return true
+        if (filter == "non-air" && !unitType.isAirUnit()) return true
+        if ((filter == "military" || filter == "Military" || filter == "military units") && unitType.isMilitary()) return true
+        return false
     }
 }

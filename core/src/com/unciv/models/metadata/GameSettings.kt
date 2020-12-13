@@ -9,10 +9,11 @@ data class WindowState (val width:Int=0, val height:Int=0)
 class GameSettings {
     var showWorkedTiles: Boolean = false
     var showResourcesAndImprovements: Boolean = true
+    var showTileYields: Boolean = false
     var checkForDueUnits: Boolean = true
     var singleTapMove: Boolean = false
     var language: String = "English"
-    var resolution: String = "900x600" // Aut-detecting resolution was a BAD IDEA since it needs to be based on DPI AND resolution.
+    var resolution: String = "900x600" // Auto-detecting resolution was a BAD IDEA since it needs to be based on DPI AND resolution.
     var tutorialsShown = HashSet<String>()
     var tutorialTasksCompleted = HashSet<String>()
     var hasCrashedRecently = false

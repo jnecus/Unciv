@@ -32,6 +32,7 @@ class ModOptions {
     var unitsToRemove = HashSet<String>()
     var nationsToRemove = HashSet<String>()
     var uniques = HashSet<String>()
+    val maxXPfromBarbarians = 30
 }
 
 class Ruleset {
@@ -217,9 +218,14 @@ class Ruleset {
         val lines = ArrayList<String>()
 
         // Checks for all mods
-        for (unit in units.values)
+        for (unit in units.values) {
             if (unit.upgradesTo == unit.name)
                 lines += "${unit.name} upgrades to itself!"
+            if (!unit.unitType.isCivilian() && unit.strength == 0)
+                lines += "${unit.name} is a military unit but has no assigned strength!"
+            if (unit.unitType.isRanged() && unit.rangedStrength == 0)
+                lines += "${unit.name} is a ranged unit but has no assigned rangedStrength!"
+        }
 
         for (tech in technologies.values) {
             for (otherTech in tech.column!!.techs) {
@@ -250,8 +256,7 @@ class Ruleset {
             for (promotion in unit.promotions)
                 if (!unitPromotions.containsKey(promotion))
                     lines += "${unit.replaces} contains promotion $promotion which does not exist!"
-            if (unit.upgradesTo != null && units.containsKey(unit.upgradesTo!!) && units[unit.upgradesTo!!]!!.requiredTech == null)
-                lines += "${unit.name} upgrades to ${unit.upgradesTo} which has no required tech!"
+
         }
 
         for (building in buildings.values) {

@@ -1,3 +1,106 @@
+## 3.12.0
+
+Option to display tile yields on world screen - by jnecus
+
+Added much-needed "+[]% Production when constructing [] units" unique
+
+Added "All" filter for units
+
+Resolved #3408 - Unit maintenance cost reduction generalized, now works for Ottomans
+
+Resolved #3409 - American unique grants extra sight only to military land units
+
+Fixed crash when nuking Barbarian units
+
+By 9kgsofrice:
+
+- GG bonus generation now checks for civinfo uniques 
+- City-state resources from all sources shared with ally civ 
+
+## 3.11.19
+
+Reassign population after selling a specialist-providing building
+
+Resolved #3289 - can place unbuildable improvements that can exist on tiles
+
+Added nation icons to the leader names in the diplomacy screen
+
+Fixed ANR caused by too many saved games
+
+Selected unit stays selected when single-tap moved into a tile with another unit
+
+
+By 9kgsofrice:
+
+- resources can be added by tile improvement with unique "Provides [] []" 
+- Specialists can add happiness 
+- "Should not be displayed without []" unique for constructions accomodates resources and buildings
+
+## 3.11.18
+
+Improvements can't be built in neutral areas, as per Civ V
+
+Added button to add construction items directly to the queue
+
+Mods can handle removing existing buildings
+
+Don't allow AI to offer peace to city states allied with their enemies
+
+Helicopter Gunship - By givehub99
+
+Workers stop building (most) duplicate roads connecting cities - By ninjatao
+
+Translation updates
+
+## 3.11.17
+
+Fixed rare errors
+
+First attempt at making Unciv Android-TV-compatible
+
+By 9kgsofrice:
+
+- adds val to modoptions and check to battle.kt to adjust max xp from barbarians 
+- "Uncapturable" unique 
+- unique "[] units gain the [] promotion" affects exisiting units 
+- Hide build menu constructions requiring resources with unique 
+- Nation "style" can define unit appearance 
+- Changes check to remove national wonders on city ownership changes to rely on building.isNationalWonder 
+
+Translation updates
+
+## 3.11.16
+
+Resolved #3364 - Fixed certain battle modifiers not activating
+
+Resources provided by buildings are affected by resource amount uniques - by 9kgsofrice
+
+Fixed minor crashing bugs in misconfigured mods
+
+Display mod incompatibilities  when attempting to start a new game
+
+Translation updates
+
+## 3.11.15
+
+HUGE framerate improvements! :D
+
+Resolved #3347 - units spawned by buildings are spawned in the city the building was built in
+
+Added mod checks that combat units have strength and ranged units have rangedStrength
+
+Can now handle units upgrading to units with no required tech
+
+Resolved #3360 - notify peace treaty to all common known civs
+
+AI settlers can no longer settle after movement with no movement points
+
+Fixed Free Thought trading post bonus - By ravignir
+
+Units/buildings with "Will not be displayed in Civilopedia" now will not show in tech tree - By 9kgsofrice
+
+Translation updates
+
 ## 3.11.14
 
 500th version, my goodness 0_0

@@ -74,9 +74,7 @@ class DiplomacyScreen(val viewingCiv:CivilizationInfo):CameraStageBaseScreen() {
 
             leftSideTable.add(civIndicator).row()
 
-            civIndicator.onClick {
-                updateRightSide(civ)
-            }
+            civIndicator.onClick { updateRightSide(civ) }
         }
     }
 
@@ -99,13 +97,18 @@ class DiplomacyScreen(val viewingCiv:CivilizationInfo):CameraStageBaseScreen() {
 
         val diplomacyTable = Table()
         diplomacyTable.defaults().pad(10f)
-        diplomacyTable.add(otherCiv.getLeaderDisplayName().toLabel(fontSize = 24)).row()
-        diplomacyTable.add("{Type: } {${otherCiv.cityStateType}}".toLabel()).row()
-        diplomacyTable.add("{Personality: } {${otherCiv.cityStatePersonality}}".toLabel()).row()
+
+        val displayNameTable = Table()
+        displayNameTable.add(ImageGetter.getNationIndicator(otherCiv.nation, 24f)).pad(0f,0f,5f,10f)
+        displayNameTable.add(otherCiv.getLeaderDisplayName().toLabel(fontSize = 24))
+        diplomacyTable.add(displayNameTable).row()
+
+        diplomacyTable.add("{Type}:  {${otherCiv.cityStateType}}".toLabel()).row()
+        diplomacyTable.add("{Personality}:  {${otherCiv.cityStatePersonality}}".toLabel()).row()
         otherCiv.updateAllyCivForCityState()
         val ally = otherCiv.getAllyCiv()
         if (ally != "") {
-            val allyString = "{Ally: }{$ally} {Influence: }".tr() +
+            val allyString = "{Ally}: {$ally} {Influence}: ".tr() +
                     otherCiv.getDiplomacyManager(ally).influence.toString()
             diplomacyTable.add(allyString.toLabel()).row()
         }
@@ -213,7 +216,10 @@ class DiplomacyScreen(val viewingCiv:CivilizationInfo):CameraStageBaseScreen() {
         val diplomacyTable = Table()
         diplomacyTable.defaults().pad(10f)
 
-        diplomacyTable.add(otherCiv.getLeaderDisplayName().toLabel(fontSize = 24)).row()
+        val displayNameTable = Table()
+        displayNameTable.add(ImageGetter.getNationIndicator(otherCiv.nation, 24f)).pad(0f,0f,5f,5f)
+        displayNameTable.add(otherCiv.getLeaderDisplayName().toLabel(fontSize = 24))
+        diplomacyTable.add(displayNameTable).row()
         if (otherCivDiplomacyManager.relationshipLevel() <= RelationshipLevel.Enemy)
             diplomacyTable.add(otherCiv.nation.hateHello.toLabel()).row()
         else
@@ -380,10 +386,10 @@ class DiplomacyScreen(val viewingCiv:CivilizationInfo):CameraStageBaseScreen() {
     fun getRelationshipTable(otherCivDiplomacyManager: DiplomacyManager): Table {
         val relationshipTable = Table()
 
-        val opinionOfUs = if(otherCivDiplomacyManager.civInfo.isCityState()) otherCivDiplomacyManager.influence.toInt()
+        val opinionOfUs = if (otherCivDiplomacyManager.civInfo.isCityState()) otherCivDiplomacyManager.influence.toInt()
         else otherCivDiplomacyManager.opinionOfOtherCiv().toInt()
 
-        relationshipTable.add("Our relationship: ".toLabel())
+        relationshipTable.add("{Our relationship}: ".toLabel())
         val relationshipLevel = otherCivDiplomacyManager.relationshipLevel()
         val relationshipText = relationshipLevel.name.tr() + " ($opinionOfUs)"
         val relationshipColor = when (relationshipLevel) {

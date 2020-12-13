@@ -105,7 +105,11 @@ open class TileInfo {
 
     fun getCity(): CityInfo? = owningCity
 
-    fun getLastTerrain(): Terrain = if (terrainFeature != null) getTerrainFeature()!! else if (naturalWonder != null) getNaturalWonder() else getBaseTerrain()
+    fun getLastTerrain(): Terrain = when {
+        terrainFeature != null -> getTerrainFeature()!!
+        naturalWonder != null -> getNaturalWonder()
+        else -> getBaseTerrain()
+    }
 
     fun getTileResource(): TileResource =
             if (resource == null) throw Exception("No resource exists for this tile!")
@@ -160,7 +164,7 @@ open class TileInfo {
     fun getWorkingCity(): CityInfo? {
         val civInfo = getOwner()
         if (civInfo == null) return null
-        return civInfo.cities.firstOrNull { it.workedTiles.contains(position) }
+        return civInfo.cities.firstOrNull { it.isWorked(this) }
     }
 
     fun isWorked(): Boolean {
@@ -242,10 +246,6 @@ open class TileInfo {
         if (hasViewableResource(observingCiv) && getTileResource().improvement == improvement.name)
             stats.add(getTileResource().improvementStats!!.clone()) // resource-specific improvement
 
-        // As of 3.10.5 This is to be deprecated and converted to "[stats] once [tech] is discovered" - keeping it here to that mods with this can still work for now
-        if (improvement.improvingTech != null && observingCiv.tech.isResearched(improvement.improvingTech!!))
-            stats.add(improvement.improvingTechStats!!) // eg Chemistry for mines
-
         for (unique in improvement.uniqueObjects)
             if (unique.placeholderText == "[] once [] is discovered" && observingCiv.tech.isResearched(unique.params[1]))
                 stats.add(unique.stats)
@@ -289,14 +289,13 @@ open class TileInfo {
     fun canBuildImprovement(improvement: TileImprovement, civInfo: CivilizationInfo): Boolean {
         return when {
             improvement.uniqueTo != null && improvement.uniqueTo != civInfo.civName -> false
-            improvement.techRequired?.let { civInfo.tech.isResearched(it) } == false -> false
-            getOwner() != null && getOwner() != civInfo &&
-                    !improvement.hasUnique("Can be built outside your borders") -> false
+            improvement.techRequired != null && !civInfo.tech.isResearched(improvement.techRequired!!) -> false
+            getOwner() != civInfo && !improvement.hasUnique("Can be built outside your borders") -> false
             else -> canImprovementBeBuiltHere(improvement, hasViewableResource(civInfo))
         }
     }
 
-    /** Without regards to what civinfo it is, a lot of the checks are ust for the improvement on the tile.
+    /** Without regards to what civinfo it is, a lot of the checks are just for the improvement on the tile.
      *  Doubles as a check for the map editor.
      */
     fun canImprovementBeBuiltHere(improvement: TileImprovement, resourceIsVisible:Boolean = resource!=null): Boolean {
@@ -449,7 +448,7 @@ open class TileInfo {
     }
 
     fun setTerrainTransients() {
-        baseTerrainObject = ruleset.terrains[baseTerrain]!! // This is a HACK.
+        baseTerrainObject = ruleset.terrains[baseTerrain]!!
         isWater = getBaseTerrain().type == TerrainType.Water
         isLand = getBaseTerrain().type == TerrainType.Land
         isOcean = baseTerrain == Constants.ocean

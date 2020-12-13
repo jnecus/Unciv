@@ -39,7 +39,7 @@ class CityStats {
     private fun getStatsFromTiles(): Stats {
         val stats = Stats()
         for (cell in cityInfo.tilesInRange
-                .filter { cityInfo.location == it.position || cityInfo.workedTiles.contains(it.position) })
+                .filter { cityInfo.location == it.position || cityInfo.isWorked(it) })
             stats.add(cell.getTileStats(cityInfo, cityInfo.civInfo))
         return stats
     }
@@ -50,7 +50,7 @@ class CityStats {
             val civInfo = cityInfo.civInfo
             stats.gold = civInfo.getCapital().population.population * 0.15f + cityInfo.population.population * 1.1f - 1 // Calculated by http://civilization.wikia.com/wiki/Trade_route_(Civ5)
             for (unique in civInfo.getMatchingUniques("[] from each Trade Route"))
-                stats.add(unique.stats!!)
+                stats.add(unique.stats)
             if (civInfo.hasUnique("Gold from all trade routes +25%")) stats.gold *= 1.25f // Machu Pichu speciality
         }
         return stats
@@ -215,11 +215,14 @@ class CityStats {
 
         if (cityInfo.getCenterTile().militaryUnit != null)
             for (unique in civInfo.getMatchingUniques("[] in all cities with a garrison"))
-                happinessFromPolicies += unique.stats!!.happiness
+                happinessFromPolicies += unique.stats.happiness
 
         newHappinessList["Policies"] = happinessFromPolicies
 
         if (hasExtraAnnexUnhappiness()) newHappinessList["Occupied City"] = -2f //annexed city
+
+        val happinessFromSpecialists = getStatsFromSpecialists(cityInfo.population.getNewSpecialists()).happiness.toInt().toFloat()
+        if (happinessFromSpecialists>0) newHappinessList["Specialists"] = happinessFromSpecialists
 
         val happinessFromBuildings = cityInfo.cityConstructions.getStats().happiness.toInt().toFloat()
         newHappinessList["Buildings"] = happinessFromBuildings
@@ -247,7 +250,7 @@ class CityStats {
         else stats.add(stat, 2f) // science and gold specialists
 
         for(unique in cityInfo.civInfo.getMatchingUniques("[] from every specialist"))
-            stats.add(unique.stats!!)
+            stats.add(unique.stats)
 
         return stats
     }
@@ -257,7 +260,7 @@ class CityStats {
         if (specialist == null) return Stats()
         val stats = specialist.clone()
         for (unique in cityInfo.civInfo.getMatchingUniques("[] from every specialist"))
-            stats.add(unique.stats!!)
+            stats.add(unique.stats)
         return stats
     }
 
@@ -275,10 +278,10 @@ class CityStats {
             if ((unique.placeholderText == "[] in capital" && cityInfo.isCapital())
                     || unique.placeholderText == "[] in all cities"
                     || (unique.placeholderText == "[] in all cities with a garrison" && cityInfo.getCenterTile().militaryUnit != null))
-                stats.add(unique.stats!!)
+                stats.add(unique.stats)
             if (unique.placeholderText == "[] per [] population in all cities") {
                 val amountOfEffects = (cityInfo.population.population / unique.params[1].toInt()).toFloat()
-                stats.add(unique.stats!!.times(amountOfEffects))
+                stats.add(unique.stats.times(amountOfEffects))
             }
             if (unique.text == "+1 gold and -1 unhappiness for every 2 citizens in capital" && cityInfo.isCapital()) {
                 stats.gold += (cityInfo.population.population / 2).toFloat()
@@ -304,16 +307,6 @@ class CityStats {
         val currentConstruction = cityInfo.cityConstructions.getCurrentConstruction()
 
         // This is to be deprecated and converted to "+[]% production when building [] in this city" - keeping it here to that mods with this can still work for now
-        if (currentConstruction is Building && currentConstruction.uniques.contains("Spaceship part")) {
-            if (cityInfo.containsBuildingUnique("Increases production of spaceship parts by 15%"))
-                stats.production += 15
-            if (cityInfo.civInfo.hasUnique("Increases production of spaceship parts by 25%"))
-                stats.production += 25
-            if (cityInfo.containsBuildingUnique("Increases production of spaceship parts by 50%"))
-                stats.production += 50
-        }
-
-        // This is to be deprecated and converted to "+[]% production when building [] in this city" - keeping it here to that mods with this can still work for now
         if (currentConstruction is BaseUnit) {
             if (currentConstruction.unitType == UnitType.Mounted
                     && cityInfo.containsBuildingUnique("+15% Production when building Mounted Units in this city"))
@@ -327,7 +320,7 @@ class CityStats {
         }
 
         for (unique in cityInfo.cityConstructions.builtBuildingUniqueMap.getUniques("+[]% production when building [] in this city")) {
-            if (constructionFitsFilter(currentConstruction, unique.params[1]))
+            if (constructionMatchesFilter(currentConstruction, unique.params[1]))
                 stats.production += unique.params[0].toInt()
         }
 
@@ -351,7 +344,12 @@ class CityStats {
 
 
         for (unique in uniques.filter { it.placeholderText == "+[]% Production when constructing []" }) {
-            if (constructionFitsFilter(currentConstruction, unique.params[1]))
+            if (constructionMatchesFilter(currentConstruction, unique.params[1]))
+                stats.production += unique.params[0].toInt()
+        }
+
+        for (unique in uniques.filter { it.placeholderText == "+[]% Production when constructing [] units" }) {
+            if (currentConstruction is BaseUnit && currentConstruction.matchesFilter(unique.params[1]))
                 stats.production += unique.params[0].toInt()
         }
 
@@ -370,14 +368,16 @@ class CityStats {
         return stats
     }
 
-    fun constructionFitsFilter(construction:IConstruction, filter:String): Boolean {
+    fun constructionMatchesFilter(construction:IConstruction, filter:String): Boolean {
         return construction.name == filter
+                // All of these are deprecated as of 3.11.20 in favor of "+[]% Production when constructing [] units"
                 || filter == "land units" && construction is BaseUnit && construction.unitType.isLandUnit()
                 || filter == "naval units" && construction is BaseUnit && construction.unitType.isWaterUnit()
                 || filter == "ranged units" && construction is BaseUnit && construction.unitType == UnitType.Ranged
                 || filter == "mounted units" && construction is BaseUnit && construction.unitType == UnitType.Mounted
                 || filter == "military units" && construction is BaseUnit && !construction.unitType.isCivilian()
                 || filter == "melee units" && construction is BaseUnit && construction.unitType.isMelee()
+
                 || filter == "Buildings" && construction is Building && !(construction.isWonder || construction.isNationalWonder)
                 || filter == "Wonders" && construction is Building && (construction.isWonder || construction.isNationalWonder)
                 || construction is Building && construction.uniques.contains(filter)

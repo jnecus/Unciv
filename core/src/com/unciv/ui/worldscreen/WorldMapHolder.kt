@@ -205,14 +205,14 @@ class WorldMapHolder(internal val worldScreen: WorldScreen, internal val tileMap
                 }
 
                 val turnsToGetThere = unitsWhoCanMoveThere.values.max()!!
-//                val selectedUnit = unitsWhoCanMoveThere.keys.first()
 
                 if (UncivGame.Current.settings.singleTapMove && turnsToGetThere == 1) {
                     // single turn instant move
+                    val selectedUnit = unitsWhoCanMoveThere.keys.first()
                     for(unit in unitsWhoCanMoveThere.keys) {
                         unit.movement.headTowards(tileInfo)
                     }
-//                    worldScreen.bottomUnitTable.selectUnit(selectedUnit) // keep moved unit selected
+                    worldScreen.bottomUnitTable.selectUnit(selectedUnit) // keep moved unit selected
                 } else {
                     // add "move to" button if there is a path to tileInfo
                     val moveHereButtonDto = MoveHereButtonDto(unitsWhoCanMoveThere, tileInfo)
@@ -468,7 +468,10 @@ class WorldMapHolder(internal val worldScreen: WorldScreen, internal val tileMap
                 tileGroup.cityButtonLayerGroup.isTransform = false // to save on rendering time to improve framerate
         if (scale < 1 && scale > 0.5f)
             for (tileGroup in tileGroups.values) {
-                tileGroup.cityButtonLayerGroup.isTransform = true
+                // ONLY set those groups that have active citybuttons as transformable!
+                // This is massively framerate-improving!
+                if (tileGroup.cityButtonLayerGroup.hasChildren())
+                    tileGroup.cityButtonLayerGroup.isTransform = true
                 tileGroup.cityButtonLayerGroup.setScale(scale)
             }
     }

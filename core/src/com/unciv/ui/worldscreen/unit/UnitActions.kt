@@ -296,7 +296,7 @@ object UnitActions {
                         type = UnitActionType.HurryResearch,
                         uncivSound = UncivSound.Chimes,
                         action = {
-                            unit.civInfo.tech.hurryResearch()
+                            unit.civInfo.tech.addScience(unit.civInfo.tech.getScienceFromGreatScientist())
                             addGoldPerGreatPersonUsage(unit.civInfo)
                             unit.destroy()
                         }.takeIf { unit.civInfo.tech.currentTechnologyName() != null })
@@ -308,17 +308,6 @@ object UnitActions {
                         uncivSound = UncivSound.Chimes,
                         action = {
                             unit.civInfo.goldenAges.enterGoldenAge(turnsToGoldenAge)
-                            addGoldPerGreatPersonUsage(unit.civInfo)
-                            unit.destroy()
-                        }.takeIf { unit.currentTile.getOwner() != null && unit.currentTile.getOwner() == unit.civInfo })
-            }
-            // As of 3.10.7 This is to be deprecated and converted to "Can start an []-turn golden age" - keeping it here to that mods with this can still work for now
-            "Can start an 8-turn golden age" -> {
-                actionList += UnitAction(
-                        type = UnitActionType.StartGoldenAge,
-                        uncivSound = UncivSound.Chimes,
-                        action = {
-                            unit.civInfo.goldenAges.enterGoldenAge(8)
                             addGoldPerGreatPersonUsage(unit.civInfo)
                             unit.destroy()
                         }.takeIf { unit.currentTile.getOwner() != null && unit.currentTile.getOwner() == unit.civInfo })

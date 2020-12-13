@@ -45,10 +45,12 @@ class TechButton(techName:String, private val techManager: TechManager, isWorldS
 
         val tech = ruleset.technologies[techName]!!
 
-        for (unit in tech.getEnabledUnits(techManager.civInfo))
+        for (unit in tech.getEnabledUnits(techManager.civInfo)
+                .filter { "Will not be displayed in Civilopedia" !in it.uniques})
             techEnabledIcons.add(ImageGetter.getConstructionImage(unit.name).surroundWithCircle(techIconSize))
 
-        for (building in tech.getEnabledBuildings(techManager.civInfo))
+        for (building in tech.getEnabledBuildings(techManager.civInfo)
+                .filter { "Will not be displayed in Civilopedia" !in it.uniques})
             techEnabledIcons.add(ImageGetter.getConstructionImage(building.name).surroundWithCircle(techIconSize))
 
         for(building in tech.getObsoletedBuildings(techManager.civInfo) )
@@ -62,7 +64,6 @@ class TechButton(techName:String, private val techManager: TechManager, isWorldS
 
         for (improvement in ruleset.tileImprovements.values
                 .filter { it.techRequired == techName || it.uniqueObjects.any { u -> u.params.contains(techName) }
-                        || it.improvingTech == techName
                         || it.uniqueObjects.any { it.placeholderText=="[] once [] is discovered" && it.params[1]==techName } }
                 .filter { it.uniqueTo==null || it.uniqueTo==civName })
             if (improvement.name.startsWith("Remove"))
